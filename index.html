@@ -1990,6 +1990,7 @@ if(location.search.indexOf('debug')>=0){ window.__duck={
   step:function(n,dt){ n=n||1; dt=dt||0.05; for(let i=0;i<n;i++){ update(dt,clock.elapsedTime+i*dt); if(playing){ runTime+=dt; } } runTimerEl.textContent='⏱ '+fmtTime(runTime); },
   addMelons:function(v){ addMelon(v); },
   end:function(w,r){ endGame(w,r); },
+  snap:function(w,h){ const ow=innerWidth,oh=innerHeight; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); renderer.render(scene,camera); const d=renderer.domElement.toDataURL('image/png'); renderer.setSize(ow,oh,false); camera.aspect=ow/oh; camera.updateProjectionMatrix(); return d; },
   state:function(){ return {runTime:runTime,collected:collected,playing:playing,mode:mode,babies:babies.length}; } }; }
 })();
 </script>
