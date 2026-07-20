@@ -59,8 +59,9 @@
   #jumpBtn,#raceBtn,#vesselBtn{display:none;position:fixed;right:14px;z-index:9;cursor:pointer;font-family:inherit;font-weight:800;font-size:17px;color:var(--ink);border:4px solid var(--ink);border-radius:16px;padding:11px 18px;box-shadow:0 5px 0 rgba(43,34,53,.3);}
   #jumpBtn{bottom:16px;background:#ffa94f;} #raceBtn{bottom:74px;background:#ff8ad0;} #vesselBtn{bottom:16px;background:#9bd0ff;}
   #raceInfo{display:none;position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9;font-family:inherit;font-weight:800;font-size:17px;color:var(--ink);background:#fff7e6;border:4px solid var(--ink);border-radius:14px;padding:8px 16px;box-shadow:0 4px 0 rgba(43,34,53,.3);}
-  #stickerBtn{display:none;position:fixed;top:14px;right:14px;z-index:9;cursor:pointer;font-family:inherit;font-weight:800;font-size:15px;color:var(--ink);background:#ffd6f0;border:4px solid var(--ink);border-radius:14px;padding:8px 12px;box-shadow:0 4px 0 rgba(43,34,53,.3);}
-  #stickerBar{display:none;position:fixed;top:106px;right:14px;z-index:9;max-width:210px;background:#fff7fb;border:4px solid var(--ink);border-radius:14px;padding:6px;box-shadow:0 4px 0 rgba(43,34,53,.3);text-align:center;}
+  #hudTools{display:flex;gap:8px;pointer-events:auto;}
+  #stickerBtn{display:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:15px;color:var(--ink);background:#ffd6f0;border:4px solid var(--ink);border-radius:14px;padding:8px 12px;box-shadow:0 4px 0 rgba(43,34,53,.3);}
+  #stickerBar{display:none;pointer-events:auto;max-width:210px;background:#fff7fb;border:4px solid var(--ink);border-radius:14px;padding:6px;box-shadow:0 4px 0 rgba(43,34,53,.3);text-align:center;}
   #stickerBar button{font-size:23px;background:none;border:none;cursor:pointer;padding:3px 4px;line-height:1;}
   #stickerBar button.clr{font-size:15px;font-weight:800;}
   #enterBtn:active{transform:translateX(-50%) translateY(3px);box-shadow:0 3px 0 rgba(43,34,53,.35);}
@@ -79,7 +80,7 @@
   button.play{cursor:pointer;font-family:inherit;font-weight:800;font-size:18px;color:var(--ink);background:var(--duck);border:5px solid var(--ink);border-radius:16px;padding:12px 22px;box-shadow:0 6px 0 rgba(43,34,53,.35);transition:transform .06s,box-shadow .06s;}
   button.play:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(43,34,53,.35);}
   #runTimer{position:absolute;top:54px;left:50%;transform:translateX(-50%);background:rgba(43,34,53,.62);color:#fff;border-radius:12px;padding:4px 12px;font-weight:800;font-size:13.5px;letter-spacing:.03em;}
-  #photoBtn{display:none;position:fixed;top:60px;right:14px;z-index:9;cursor:pointer;font-family:inherit;font-weight:800;font-size:15px;color:var(--ink);background:#c6f0ff;border:4px solid var(--ink);border-radius:14px;padding:8px 12px;box-shadow:0 4px 0 rgba(43,34,53,.3);}
+  #photoBtn{display:none;cursor:pointer;font-family:inherit;font-weight:800;font-size:15px;color:var(--ink);background:#c6f0ff;border:4px solid var(--ink);border-radius:14px;padding:8px 12px;box-shadow:0 4px 0 rgba(43,34,53,.3);}
   #photoBtn:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(43,34,53,.3);}
   #endTime{font-weight:800;font-size:17px;background:#fff;border:3px solid var(--ink);border-radius:12px;padding:7px 10px;}
   #startStats{font-weight:800;font-size:14px;background:#fff;border:3px solid var(--ink);border-radius:12px;padding:7px 10px;}
@@ -102,6 +103,8 @@
       <div class="meter"><div class="count" style="font-size:18px;">👶 Ducklings: <span id="babies">0</span></div></div>
       <div class="meter"><div class="count" style="font-size:15px;" id="worldCounts">🌍0 🚀0 🌲0 🌊0</div></div>
       <div id="boostBadge">⚡ SUPER SPEED!</div>
+      <div id="hudTools"><button id="stickerBtn">🎨 Stickers</button><button id="photoBtn">📸 Photo</button></div>
+      <div id="stickerBar"></div>
     </div>
   </div>
   <div id="worldTag">🌍 Savanna</div>
@@ -119,9 +122,6 @@
 <button id="raceBtn">🏁 Race</button>
 <button id="vesselBtn">✈️ Vessel</button>
 <div id="raceInfo"></div>
-<button id="stickerBtn">🎨 Stickers</button>
-<button id="photoBtn">📸 Photo</button>
-<div id="stickerBar"></div>
 
 <div id="startScreen" class="overlay">
   <div class="card">
