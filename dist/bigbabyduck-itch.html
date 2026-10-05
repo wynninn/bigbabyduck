@@ -290,6 +290,24 @@ function makeShareCard(win){
 }
 function toggleMute(){ muted=!muted; store('muted',muted); if(master) master.gain.value=muted?0:0.5; say(muted?'🔇 Muted (M)':'🔊 Sound on!',1100); }
 
+/* ===== PORTAL SDK (CrazyGames) — loads ONLY on CrazyGames domains or with ?cgsdk; inert everywhere else ===== */
+const CG={on:false,sdk:null,lastAd:0,inAd:false};
+(function(){ const h=location.hostname;
+  if(!(/crazygames|1001juegos/.test(h) || location.search.indexOf('cgsdk')>=0)) return;
+  const s=document.createElement('script'); s.src='https://sdk.crazygames.com/crazygames-sdk-v3.js';
+  s.onload=function(){ (async function(){ try{ await window.CrazyGames.SDK.init(); CG.sdk=window.CrazyGames.SDK; CG.on=true; try{ CG.sdk.game.loadingStart(); CG.sdk.game.loadingStop(); }catch(e){} }catch(e){} })(); };
+  document.head.appendChild(s);
+})();
+function cgPlayStart(){ if(CG.on){ try{ CG.sdk.game.gameplayStart(); }catch(e){} } }
+function cgPlayStop(){ if(CG.on){ try{ CG.sdk.game.gameplayStop(); }catch(e){} } }
+function cgHappy(){ if(CG.on){ try{ CG.sdk.game.happytime(); }catch(e){} } }
+function cgMaybeAd(done){ done=done||function(){};
+  if(!CG.on || CG.inAd || (Date.now()-CG.lastAd)<185000){ done(); return; }
+  CG.inAd=true; cgPlayStop();
+  function finish(){ CG.lastAd=Date.now(); CG.inAd=false; if(master) master.gain.value=muted?0:0.5; if(playing) cgPlayStart(); done(); }
+  try{ CG.sdk.ad.requestAd('midgame',{ adStarted:function(){ if(master) master.gain.value=0; }, adFinished:finish, adError:finish }); }
+  catch(e){ finish(); }
+}
 function rand(a,b){return a+Math.random()*(b-a);}
 function clampField(v,m){ m=m||(WORLD-2); v.x=Math.max(-m,Math.min(m,v.x)); v.z=Math.max(-m,Math.min(m,v.z)); }
 function mat(c,r){return new THREE.MeshStandardMaterial({color:c,roughness:r==null?0.55:r});}
@@ -1732,7 +1750,8 @@ function updateSplashes(dt){ for(const s of splashes){ if(s.userData.life>0){ s.
 function dropBobSeed(){ for(const s of bobSeeds){ if(s.userData.life<=0){ s.position.set(melonBob.position.x+rand(-0.8,0.8),0.12,melonBob.position.z+rand(-0.8,0.8)); s.rotation.y=rand(0,6.28); s.scale.set(1,0.45,0.65); s.userData.life=0.9; s.visible=true; return; } } }
 function updateBobSeeds(dt){ for(const s of bobSeeds){ if(s.userData.life>0){ s.userData.life-=dt; if(s.userData.life<=0) s.visible=false; else { const k=s.userData.life/0.9; s.scale.set(k,k*0.45,k*0.65); } } } }
 function activateBoost(){ boost=BOOST_TIME; aura.visible=true; boostBadge.style.display='flex'; fullness=Math.min(100,fullness+8); say("ZOOM! ⚡",1500); sfxBoost(); }
-function travel(to,viaRocket){ if(transitioning)return; transitioning=true; viaRocket?sfxRocket():sfxPortal(); flash.style.opacity=1; setTimeout(function(){setMode(to);},450); setTimeout(function(){ flash.style.opacity=0; transitioning=false; },950); }
+function travel(to,viaRocket){ if(transitioning)return; transitioning=true; viaRocket?sfxRocket():sfxPortal(); flash.style.opacity=1;
+  setTimeout(function(){ setMode(to); cgMaybeAd(function(){ setTimeout(function(){ flash.style.opacity=0; transitioning=false; },500); }); },450); }
 function endGame(win,reason){ playing=false; if(win) sfxWin(); else sfxLose();
   lastWin=win;
   let timeLine='⏱ Time: '+fmtTime(runTime);
@@ -1748,7 +1767,8 @@ function endGame(win,reason){ playing=false; if(win) sfxWin(); else sfxLose();
     : (reason==='air'? ("Ran out of air in space with "+collected+" of "+TARGET+". Rocket home before the oxygen empties next time!")
                      : ("You gathered "+collected+" of "+TARGET+" watermelons before the duck got too hungry. Try again!"));
   document.getElementById('endBreakdown').innerHTML='Collected per world &nbsp; 🌍 '+wCount.ground+' &nbsp; 🚀 '+wCount.space+' &nbsp; 🌲 '+wCount.forest+' &nbsp; 🌊 '+wCount.ocean+' &nbsp; 🎋 '+wCount.bamboo+' &nbsp; 🏖️ '+wCount.beach+' &nbsp; ⭐ '+wCount.sky+' &nbsp; 🦕 '+wCount.dino+' &nbsp; ❄️ '+wCount.snow+' &nbsp; 🚜 '+wCount.farm+' &nbsp; 🦆 '+wCount.pond;
-  document.getElementById('endScreen').classList.remove('hidden'); }
+  document.getElementById('endScreen').classList.remove('hidden');
+  cgPlayStop(); if(win) cgHappy(); cgMaybeAd(); }
 
 /* ===== INPUT ===== */
 function setPointer(cx,cy){ pointerNDC.set((cx/innerWidth)*2-1,-(cy/innerHeight)*2+1); raycaster.setFromCamera(pointerNDC,camera); if(raycaster.ray.intersectPlane(groundPlane,targetPoint)) hasTarget=true; }
@@ -1951,7 +1971,7 @@ function renderSelfie(){ const fx=Math.sin(duck.rotation.y), fz=Math.cos(duck.ro
   renderer.setScissorTest(true); renderer.setViewport(innerWidth-size-mr, by, size, size); renderer.setScissor(innerWidth-size-mr, by, size, size);
   renderer.render(scene,selfieCam); renderer.setScissorTest(false); renderer.setViewport(0,0,innerWidth,innerHeight); }
 
-function animate(){ requestAnimationFrame(animate); const dt=Math.min(clock.getDelta(),0.05); update(dt,clock.elapsedTime);
+function animate(){ requestAnimationFrame(animate); if(CG.inAd){ clock.getDelta(); return; } const dt=Math.min(clock.getDelta(),0.05); update(dt,clock.elapsedTime);
   if(playing){ runTime+=dt; timerTick+=dt; if(timerTick>0.24){ timerTick=0; runTimerEl.textContent='⏱ '+fmtTime(runTime); } }
   if(playerCount===2){ const w=innerWidth,h=innerHeight,hw=Math.floor(w/2);
     renderer.setScissorTest(true);
@@ -1965,10 +1985,10 @@ addEventListener('resize',function(){ setCamAspect(); renderer.setSize(innerWidt
 clock=new THREE.Clock(); initScene(); buildAll(); animate();
 function startGame(n){ playerCount=n; initAudio(); if(actx&&actx.state==='suspended')actx.resume(); startAmbient(); buildStickerBar(); document.getElementById('stickerBtn').style.display='block'; document.getElementById('photoBtn').style.display='block'; setCamAspect();
   document.getElementById('divider').style.display=(n===2)?'block':'none'; selfieDiv.style.display=(n===2)?'none':'block';
-  document.getElementById('startScreen').classList.add('hidden'); resetGame(); }
+  document.getElementById('startScreen').classList.add('hidden'); resetGame(); cgPlayStart(); }
 document.getElementById('startBtn').addEventListener('click',function(){startGame(1);});
 document.getElementById('startBtn2').addEventListener('click',function(){startGame(2);});
-document.getElementById('againBtn').addEventListener('click',function(){ if(actx&&actx.state==='suspended')actx.resume(); document.getElementById('endScreen').classList.add('hidden'); resetGame(); });
+document.getElementById('againBtn').addEventListener('click',function(){ if(actx&&actx.state==='suspended')actx.resume(); document.getElementById('endScreen').classList.add('hidden'); resetGame(); cgPlayStart(); });
 document.getElementById('shopLeave').addEventListener('click',function(){ closeShop(); });
 document.getElementById('stopBtn').addEventListener('pointerdown',function(e){ e.stopPropagation(); e.preventDefault(); if(!playing||mode!=='city')return; frozen=!frozen; if(!frozen) hasTarget=false; updateFreezeBtn(); });
 document.getElementById('enterBtn').addEventListener('pointerdown',function(e){ e.stopPropagation(); e.preventDefault(); if(!playing)return; if(mode==='house'){ exitHouse(); return; } if(mode!=='city')return; if(nearHouse){ enterHouse(nearHouse); } else if(nearShop && !shopOpen){ openShop(nearShop); } });
@@ -1999,7 +2019,10 @@ if(location.search.indexOf('debug')>=0){ window.__duck={
   addMelons:function(v){ addMelon(v); },
   end:function(w,r){ endGame(w,r); },
   snap:function(w,h){ const ow=innerWidth,oh=innerHeight; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); renderer.render(scene,camera); const d=renderer.domElement.toDataURL('image/png'); renderer.setSize(ow,oh,false); camera.aspect=ow/oh; camera.updateProjectionMatrix(); return d; },
-  state:function(){ return {runTime:runTime,collected:collected,playing:playing,mode:mode,babies:babies.length}; } }; }
+  state:function(){ return {runTime:runTime,collected:collected,playing:playing,mode:mode,babies:babies.length}; },
+  cg:function(){ return {on:CG.on,inAd:CG.inAd,lastAd:CG.lastAd}; },
+  cgSetLast:function(t){ CG.lastAd=t; },
+  travel:function(to){ travel(to,false); } }; }
 })();
 </script>
 </body>
